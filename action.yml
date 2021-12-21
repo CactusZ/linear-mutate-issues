@@ -1,11 +1,16 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Move Linear Issues'
+description: 'Move Linear Issues from one state to another'
+author: 'Igor Kasevich'
 inputs:
-  milliseconds: # change this
+  LINEAR_TOKEN:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Linear API token'
+  state_from:
+    required: true
+    description: 'move from state'
+  state_to:
+    required: true
+    description: 'move to state'
 runs:
   using: 'node12'
   main: 'dist/index.js'
