@@ -29,7 +29,7 @@
     "@linear/sdk": "^1.21.0"
   },
   "devDependencies": {
-    "@types/node": "^16.11.15",
+    "@types/node": "^17.0.2",
     "@typescript-eslint/parser": "^5.8.0",
     "@vercel/ncc": "^0.31.1",
     "eslint": "^7.32.0",
