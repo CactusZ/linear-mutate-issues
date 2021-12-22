@@ -15,10 +15,132 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LinearAPIClient = void 0;
+const core_1 = __nccwpck_require__(186);
+const sdk_1 = __nccwpck_require__(851);
+const assert_1 = __importDefault(__nccwpck_require__(357));
+class LinearAPIClient {
+    constructor(apiKey) {
+        this.filter = {};
+        (0, assert_1.default)(apiKey);
+        this.client = new sdk_1.LinearClient({ apiKey });
+    }
+    getAllStates() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const allStates = (yield this.client.workflowStates()).nodes;
+            return allStates;
+        });
+    }
+    getIssueById(issueId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issue = yield this.client.issue(issueId);
+            return issue;
+        });
+    }
+    addStateToIssueFilter(state) {
+        var _a;
+        var _b;
+        (_a = (_b = this.filter).state) !== null && _a !== void 0 ? _a : (_b.state = {});
+        this.filter.state.id = { eq: state.id };
+    }
+    addIssueToFilter(issue) {
+        this.filter.id = { eq: issue.id };
+    }
+    getIssuesWithCurrentFilter() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.client.issues({ filter: this.filter });
+            return response.nodes;
+        });
+    }
+    moveFilteredIssuesToNewState(state) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issues = yield this.getIssuesWithCurrentFilter();
+            const issueCount = issues.length;
+            if (issueCount) {
+                (0, core_1.debug)(`Found ${issueCount} issues to move`);
+                for (const issue of issues) {
+                    (0, core_1.debug)(`updating issue ${issue.id}`);
+                    yield this.moveIssueToNewState(issue, state);
+                }
+            }
+            else {
+                (0, core_1.debug)(`No issues found with filter ${JSON.stringify(this.filter)}`);
+            }
+        });
+    }
+    moveIssueToNewState(issue, state) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.client.issueUpdate(issue.id, { stateId: state.id });
+        });
+    }
+}
+exports.LinearAPIClient = LinearAPIClient;
+
+
+/***/ }),
+
+/***/ 109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core_1 = __nccwpck_require__(186);
+const move_issues_1 = __nccwpck_require__(167);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const apiKey = (0, core_1.getInput)('LINEAR_TOKEN');
+            const stateFrom = (0, core_1.getInput)('state_from');
+            const stateTo = (0, core_1.getInput)('state_to');
+            yield (0, move_issues_1.moveIssues)(stateFrom, stateTo, apiKey);
+        }
+        catch (error) {
+            if (error instanceof Error)
+                (0, core_1.setFailed)(error.message);
+        }
+    });
+}
+run();
+
+
+/***/ }),
+
+/***/ 167:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.moveIssues = void 0;
-const sdk_1 = __nccwpck_require__(851);
 const core_1 = __nccwpck_require__(186);
+const assert_1 = __importDefault(__nccwpck_require__(357));
+const linear_1 = __nccwpck_require__(749);
 function moveIssues(previousStateName, newStateName, apiKey) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!apiKey) {
@@ -30,90 +152,19 @@ function moveIssues(previousStateName, newStateName, apiKey) {
         if (!newStateName) {
             throw new Error('new state name not defined');
         }
-        const client = new sdk_1.LinearClient({ apiKey });
-        const allStates = (yield client.workflowStates()).nodes;
+        const client = new linear_1.LinearAPIClient(apiKey);
+        const allStates = yield client.getAllStates();
+        const stateNames = allStates.map(s => s.name);
         const beforeState = allStates.find(state => state.name === previousStateName);
         const afterState = allStates.find(state => state.name === newStateName);
-        if (!beforeState) {
-            throw new Error(`previous state with name ${previousStateName} not found. Found states ${allStates.map(s => s.name)}`);
-        }
-        if (!afterState) {
-            throw new Error(`new state with name ${newStateName} not found. Found states ${allStates.map(s => s.name)}`);
-        }
-        const issueFilter = { state: { id: { eq: beforeState.id } } };
+        (0, assert_1.default)(beforeState, `previous state with name ${previousStateName} not found. Found states ${stateNames}`);
+        (0, assert_1.default)(afterState, `new state with name ${newStateName} not found. Found states ${stateNames}`);
+        client.addStateToIssueFilter(beforeState);
         (0, core_1.debug)('fetching issues from Linear API');
-        const issues = (yield client.issues({
-            filter: issueFilter
-        })).nodes;
-        const issueCount = issues.length;
-        if (issueCount) {
-            (0, core_1.debug)(`Found ${issueCount} issues to move`);
-            for (const issue of issues) {
-                (0, core_1.debug)(`updating issue ${issue.id}`);
-                yield client.issueUpdate(issue.id, { stateId: afterState.id });
-            }
-        }
-        else {
-            (0, core_1.debug)(`No issues found with filter ${issueFilter}`);
-        }
+        yield client.moveFilteredIssuesToNewState(afterState);
     });
 }
 exports.moveIssues = moveIssues;
-
-
-/***/ }),
-
-/***/ 109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(186));
-const linear_1 = __nccwpck_require__(749);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const apiKey = core.getInput('LINEAR_TOKEN');
-            const stateFrom = core.getInput('state_from');
-            const stateTo = core.getInput('state_to');
-            yield (0, linear_1.moveIssues)(stateFrom, stateTo, apiKey);
-        }
-        catch (error) {
-            if (error instanceof Error)
-                core.setFailed(error.message);
-        }
-    });
-}
-run();
 
 
 /***/ }),

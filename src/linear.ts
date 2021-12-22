@@ -1,60 +1,59 @@
-import {LinearClient} from '@linear/sdk'
+import { debug } from '@actions/core';
+import { Issue, LinearClient, WorkflowState } from '@linear/sdk';
+import assert from 'assert';
 
-import {debug} from '@actions/core'
+type IssuesFuncParams = Exclude<
+  Parameters<LinearClient['issues']>[0],
+  undefined
+>;
+export class LinearAPIClient {
+  private client: LinearClient;
+  private filter: NonNullable<IssuesFuncParams['filter']> = {};
+  constructor(apiKey: string) {
+    assert(apiKey);
 
-export async function moveIssues(
-  previousStateName: string,
-  newStateName: string,
-  apiKey: string
-): Promise<void> {
-  if (!apiKey) {
-    throw new Error('LINEAR API KEY not defined')
+    this.client = new LinearClient({ apiKey });
   }
 
-  if (!previousStateName) {
-    throw new Error('previous state name not defined')
+  async getAllStates() {
+    const allStates = (await this.client.workflowStates()).nodes;
+    return allStates;
   }
 
-  if (!newStateName) {
-    throw new Error('new state name not defined')
+  async getIssueById(issueId: string) {
+    const issue = await this.client.issue(issueId);
+    return issue;
   }
 
-  const client = new LinearClient({apiKey})
-  const allStates = (await client.workflowStates()).nodes
-  const beforeState = allStates.find(state => state.name === previousStateName)
-  const afterState = allStates.find(state => state.name === newStateName)
-  if (!beforeState) {
-    throw new Error(
-      `previous state with name ${previousStateName} not found. Found states ${allStates.map(
-        s => s.name
-      )}`
-    )
+  addStateToIssueFilter(state: WorkflowState) {
+    this.filter.state ??= {};
+    this.filter.state.id = { eq: state.id };
   }
-  if (!afterState) {
-    throw new Error(
-      `new state with name ${newStateName} not found. Found states ${allStates.map(
-        s => s.name
-      )}`
-    )
+
+  addIssueToFilter(issue: Issue) {
+    this.filter.id = { eq: issue.id };
   }
-  const issueFilter = {state: {id: {eq: beforeState.id}}}
 
-  debug('fetching issues from Linear API')
-  const issues = (
-    await client.issues({
-      filter: issueFilter
-    })
-  ).nodes
+  async getIssuesWithCurrentFilter() {
+    const response = await this.client.issues({ filter: this.filter });
+    return response.nodes;
+  }
 
-  const issueCount = issues.length
-
-  if (issueCount) {
-    debug(`Found ${issueCount} issues to move`)
-    for (const issue of issues) {
-      debug(`updating issue ${issue.id}`)
-      await client.issueUpdate(issue.id, {stateId: afterState.id})
+  async moveFilteredIssuesToNewState(state: WorkflowState) {
+    const issues = await this.getIssuesWithCurrentFilter();
+    const issueCount = issues.length;
+    if (issueCount) {
+      debug(`Found ${issueCount} issues to move`);
+      for (const issue of issues) {
+        debug(`updating issue ${issue.id}`);
+        await this.moveIssueToNewState(issue, state);
+      }
+    } else {
+      debug(`No issues found with filter ${JSON.stringify(this.filter)}`);
     }
-  } else {
-    debug(`No issues found with filter ${issueFilter}`)
+  }
+
+  async moveIssueToNewState(issue: Issue, state: WorkflowState) {
+    await this.client.issueUpdate(issue.id, { stateId: state.id });
   }
 }
