@@ -25,7 +25,6 @@ const sdk_1 = __nccwpck_require__(851);
 const assert_1 = __importDefault(__nccwpck_require__(357));
 class LinearAPIClient {
     constructor(apiKey) {
-        this.filter = {};
         (0, assert_1.default)(apiKey);
         this.client = new sdk_1.LinearClient({ apiKey });
     }
@@ -41,35 +40,42 @@ class LinearAPIClient {
             return issue;
         });
     }
-    addStateToIssueFilter(state) {
+    addStateToIssueFilter(filter, state) {
         var _a;
-        var _b;
-        (_a = (_b = this.filter).state) !== null && _a !== void 0 ? _a : (_b.state = {});
-        this.filter.state.id = { eq: state.id };
+        (_a = filter.state) !== null && _a !== void 0 ? _a : (filter.state = {});
+        filter.state.id = { eq: state.id };
     }
-    addIssueToFilter(issue) {
-        this.filter.id = { eq: issue.id };
+    addIssueIdToFilter(filter, issueId) {
+        filter.id = { eq: issueId };
     }
-    getIssuesWithCurrentFilter() {
+    getIssues(filter) {
         return __awaiter(this, void 0, void 0, function* () {
-            const response = yield this.client.issues({ filter: this.filter });
+            const response = yield this.client.issues({ filter });
             return response.nodes;
         });
     }
-    moveFilteredIssuesToNewState(state) {
+    moveIssuesToNewState(issueFilter, newState) {
         return __awaiter(this, void 0, void 0, function* () {
-            const issues = yield this.getIssuesWithCurrentFilter();
+            const filter = {};
+            if (issueFilter.state) {
+                this.addStateToIssueFilter(filter, issueFilter.state);
+            }
+            if (issueFilter.issueId) {
+                this.addIssueIdToFilter(filter, issueFilter.issueId);
+            }
+            const issues = yield this.getIssues(filter);
             const issueCount = issues.length;
             if (issueCount) {
                 (0, core_1.debug)(`Found ${issueCount} issues to move`);
                 for (const issue of issues) {
                     (0, core_1.debug)(`updating issue ${issue.id}`);
-                    yield this.moveIssueToNewState(issue, state);
+                    yield this.moveIssueToNewState(issue, newState);
                 }
             }
             else {
-                (0, core_1.debug)(`No issues found with filter ${JSON.stringify(this.filter)}`);
+                (0, core_1.debug)(`No issues found with filter ${JSON.stringify(filter)}`);
             }
+            return issueCount;
         });
     }
     moveIssueToNewState(issue, state) {
@@ -106,7 +112,8 @@ function run() {
             const apiKey = (0, core_1.getInput)('LINEAR_TOKEN');
             const stateFrom = (0, core_1.getInput)('state_from');
             const stateTo = (0, core_1.getInput)('state_to');
-            yield (0, move_issues_1.moveIssues)(stateFrom, stateTo, apiKey);
+            const movedIssuesCount = yield (0, move_issues_1.moveIssues)(stateFrom, stateTo, apiKey);
+            (0, core_1.notice)(`${movedIssuesCount} issues have been moved!`);
         }
         catch (error) {
             if (error instanceof Error)
@@ -138,7 +145,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.moveIssues = void 0;
-const core_1 = __nccwpck_require__(186);
 const assert_1 = __importDefault(__nccwpck_require__(357));
 const linear_1 = __nccwpck_require__(749);
 function moveIssues(previousStateName, newStateName, apiKey) {
@@ -159,9 +165,10 @@ function moveIssues(previousStateName, newStateName, apiKey) {
         const afterState = allStates.find(state => state.name === newStateName);
         (0, assert_1.default)(beforeState, `previous state with name ${previousStateName} not found. Found states ${stateNames}`);
         (0, assert_1.default)(afterState, `new state with name ${newStateName} not found. Found states ${stateNames}`);
-        client.addStateToIssueFilter(beforeState);
-        (0, core_1.debug)('fetching issues from Linear API');
-        yield client.moveFilteredIssuesToNewState(afterState);
+        const issuesMovedCount = client.moveIssuesToNewState({
+            state: beforeState
+        }, afterState);
+        return issuesMovedCount;
     });
 }
 exports.moveIssues = moveIssues;
