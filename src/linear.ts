@@ -6,9 +6,9 @@ type IssuesFuncParams = Exclude<
   Parameters<LinearClient['issues']>[0],
   undefined
 >;
+type IssueFilter = NonNullable<IssuesFuncParams['filter']>;
 export class LinearAPIClient {
   private client: LinearClient;
-  private filter: NonNullable<IssuesFuncParams['filter']> = {};
   constructor(apiKey: string) {
     assert(apiKey);
 
@@ -25,35 +25,48 @@ export class LinearAPIClient {
     return issue;
   }
 
-  addStateToIssueFilter(state: WorkflowState) {
-    this.filter.state ??= {};
-    this.filter.state.id = { eq: state.id };
+  private addStateToIssueFilter(filter: IssueFilter, state: WorkflowState) {
+    filter.state ??= {};
+    filter.state.id = { eq: state.id };
   }
 
-  addIssueToFilter(issue: Issue) {
-    this.filter.id = { eq: issue.id };
+  private addIssueIdToFilter(filter: IssueFilter, issueId: string) {
+    filter.id = { eq: issueId };
   }
 
-  async getIssuesWithCurrentFilter() {
-    const response = await this.client.issues({ filter: this.filter });
+  async getIssues(filter: IssueFilter) {
+    const response = await this.client.issues({ filter });
     return response.nodes;
   }
 
-  async moveFilteredIssuesToNewState(state: WorkflowState) {
-    const issues = await this.getIssuesWithCurrentFilter();
+  async moveIssuesToNewState(
+    issueFilter: {
+      state?: WorkflowState;
+      issueId?: string;
+    },
+    newState: WorkflowState
+  ) {
+    const filter: IssueFilter = {};
+    if (issueFilter.state) {
+      this.addStateToIssueFilter(filter, issueFilter.state);
+    }
+    if (issueFilter.issueId) {
+      this.addIssueIdToFilter(filter, issueFilter.issueId);
+    }
+    const issues = await this.getIssues(filter);
     const issueCount = issues.length;
     if (issueCount) {
       debug(`Found ${issueCount} issues to move`);
       for (const issue of issues) {
         debug(`updating issue ${issue.id}`);
-        await this.moveIssueToNewState(issue, state);
+        await this.moveIssueToNewState(issue, newState);
       }
     } else {
-      debug(`No issues found with filter ${JSON.stringify(this.filter)}`);
+      debug(`No issues found with filter ${JSON.stringify(filter)}`);
     }
   }
 
-  async moveIssueToNewState(issue: Issue, state: WorkflowState) {
+  private async moveIssueToNewState(issue: Issue, state: WorkflowState) {
     await this.client.issueUpdate(issue.id, { stateId: state.id });
   }
 }

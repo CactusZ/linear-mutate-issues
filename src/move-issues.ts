@@ -1,4 +1,3 @@
-import { debug } from '@actions/core';
 import assert from 'assert';
 import { LinearAPIClient } from './linear';
 
@@ -31,8 +30,10 @@ export async function moveIssues(
     afterState,
     `new state with name ${newStateName} not found. Found states ${stateNames}`
   );
-  client.addStateToIssueFilter(beforeState);
-
-  debug('fetching issues from Linear API');
-  await client.moveFilteredIssuesToNewState(afterState);
+  client.moveIssuesToNewState(
+    {
+      state: beforeState
+    },
+    afterState
+  );
 }
