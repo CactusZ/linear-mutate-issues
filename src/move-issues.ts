@@ -5,7 +5,7 @@ export async function moveIssues(
   previousStateName: string,
   newStateName: string,
   apiKey: string
-): Promise<void> {
+): Promise<number> {
   if (!apiKey) {
     throw new Error('LINEAR API KEY not defined');
   }
@@ -30,10 +30,11 @@ export async function moveIssues(
     afterState,
     `new state with name ${newStateName} not found. Found states ${stateNames}`
   );
-  client.moveIssuesToNewState(
+  const issuesMovedCount = client.moveIssuesToNewState(
     {
       state: beforeState
     },
     afterState
   );
+  return issuesMovedCount;
 }

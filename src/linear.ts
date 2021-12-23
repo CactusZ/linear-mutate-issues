@@ -64,6 +64,8 @@ export class LinearAPIClient {
     } else {
       debug(`No issues found with filter ${JSON.stringify(filter)}`);
     }
+
+    return issueCount;
   }
 
   private async moveIssueToNewState(issue: Issue, state: WorkflowState) {
