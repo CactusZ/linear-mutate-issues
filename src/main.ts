@@ -1,16 +1,16 @@
-import * as core from '@actions/core'
-import {moveIssues} from './linear'
+import { setFailed, notice } from '@actions/core';
+import { moveIssues } from './move-issues';
+import { getActionParameters } from './parameters';
 
 async function run(): Promise<void> {
   try {
-    const apiKey = core.getInput('LINEAR_TOKEN')
-    const stateFrom = core.getInput('state_from')
-    const stateTo = core.getInput('state_to')
+    const parameters = getActionParameters();
+    const movedIssuesCount = await moveIssues(parameters);
 
-    await moveIssues(stateFrom, stateTo, apiKey)
+    notice(`${movedIssuesCount} issues have been moved!`);
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) setFailed(error.message);
   }
 }
 
-run()
+run();

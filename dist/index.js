@@ -15,50 +15,81 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.moveIssues = void 0;
-const sdk_1 = __nccwpck_require__(851);
+exports.LinearAPIClient = void 0;
 const core_1 = __nccwpck_require__(186);
-function moveIssues(previousStateName, newStateName, apiKey) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!apiKey) {
-            throw new Error('LINEAR API KEY not defined');
-        }
-        if (!previousStateName) {
-            throw new Error('previous state name not defined');
-        }
-        if (!newStateName) {
-            throw new Error('new state name not defined');
-        }
-        const client = new sdk_1.LinearClient({ apiKey });
-        const allStates = (yield client.workflowStates()).nodes;
-        const beforeState = allStates.find(state => state.name === previousStateName);
-        const afterState = allStates.find(state => state.name === newStateName);
-        if (!beforeState) {
-            throw new Error(`previous state with name ${previousStateName} not found. Found states ${allStates.map(s => s.name)}`);
-        }
-        if (!afterState) {
-            throw new Error(`new state with name ${newStateName} not found. Found states ${allStates.map(s => s.name)}`);
-        }
-        const issueFilter = { state: { id: { eq: beforeState.id } } };
-        (0, core_1.debug)('fetching issues from Linear API');
-        const issues = (yield client.issues({
-            filter: issueFilter
-        })).nodes;
-        const issueCount = issues.length;
-        if (issueCount) {
-            (0, core_1.debug)(`Found ${issueCount} issues to move`);
-            for (const issue of issues) {
-                (0, core_1.debug)(`updating issue ${issue.id}`);
-                yield client.issueUpdate(issue.id, { stateId: afterState.id });
+const sdk_1 = __nccwpck_require__(851);
+const assert_1 = __importDefault(__nccwpck_require__(357));
+class LinearAPIClient {
+    constructor(apiKey) {
+        (0, assert_1.default)(apiKey);
+        this.client = new sdk_1.LinearClient({ apiKey });
+    }
+    getAllStates() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const allStates = (yield this.client.workflowStates()).nodes;
+            return allStates;
+        });
+    }
+    getIssueById(issueId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issue = yield this.client.issue(issueId);
+            return issue;
+        });
+    }
+    addStateToIssueFilter(filter, state) {
+        var _a;
+        (_a = filter.state) !== null && _a !== void 0 ? _a : (filter.state = {});
+        filter.state.id = { eq: state.id };
+    }
+    addIssueIdToFilter(filter, issueId) {
+        filter.id = { eq: issueId };
+    }
+    getIssues(filter) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.client.issues({ filter });
+            return response.nodes;
+        });
+    }
+    moveIssuesToNewState(issueFilter, issueMutation) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const filter = {};
+            if (issueFilter.state) {
+                this.addStateToIssueFilter(filter, issueFilter.state);
             }
-        }
-        else {
-            (0, core_1.debug)(`No issues found with filter ${issueFilter}`);
-        }
-    });
+            if (issueFilter.issueId) {
+                this.addIssueIdToFilter(filter, issueFilter.issueId);
+            }
+            const issues = yield this.getIssues(filter);
+            const issueCount = issues.length;
+            if (issueCount) {
+                (0, core_1.debug)(`Found ${issueCount} issues to move`);
+                for (const issue of issues) {
+                    (0, core_1.debug)(`updating issue ${issue.id}`);
+                    if (issueMutation.newState) {
+                        yield this.moveIssueToNewState(issue, issueMutation.newState);
+                    }
+                    else {
+                        throw new Error('No mutation defined');
+                    }
+                }
+            }
+            else {
+                (0, core_1.debug)(`No issues found with filter ${JSON.stringify(filter)}`);
+            }
+            return issueCount;
+        });
+    }
+    moveIssueToNewState(issue, state) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.client.issueUpdate(issue.id, { stateId: state.id });
+        });
+    }
 }
-exports.moveIssues = moveIssues;
+exports.LinearAPIClient = LinearAPIClient;
 
 
 /***/ }),
@@ -68,25 +99,6 @@ exports.moveIssues = moveIssues;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -97,23 +109,111 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(186));
-const linear_1 = __nccwpck_require__(749);
+const core_1 = __nccwpck_require__(186);
+const move_issues_1 = __nccwpck_require__(167);
+const parameters_1 = __nccwpck_require__(580);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const apiKey = core.getInput('LINEAR_TOKEN');
-            const stateFrom = core.getInput('state_from');
-            const stateTo = core.getInput('state_to');
-            yield (0, linear_1.moveIssues)(stateFrom, stateTo, apiKey);
+            const parameters = (0, parameters_1.getActionParameters)();
+            const movedIssuesCount = yield (0, move_issues_1.moveIssues)(parameters);
+            (0, core_1.notice)(`${movedIssuesCount} issues have been moved!`);
         }
         catch (error) {
             if (error instanceof Error)
-                core.setFailed(error.message);
+                (0, core_1.setFailed)(error.message);
         }
     });
 }
 run();
+
+
+/***/ }),
+
+/***/ 167:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.moveIssues = void 0;
+const assert_1 = __importDefault(__nccwpck_require__(357));
+const linear_1 = __nccwpck_require__(749);
+function moveIssues(p) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const client = new linear_1.LinearAPIClient(p.linear_token);
+        const allStates = yield client.getAllStates();
+        const stateNames = allStates.map(s => s.name);
+        const beforeState = allStates.find(state => state.name === p.status_from);
+        const newState = allStates.find(state => state.name === p.status_to);
+        if (p.status_from) {
+            (0, assert_1.default)(beforeState, `previous state with name ${p.status_from} not found. Found states ${stateNames}`);
+        }
+        if (p.status_to) {
+            (0, assert_1.default)(newState, `new state with name ${p.status_to} not found. Found states ${stateNames}`);
+        }
+        const issuesMovedCount = client.moveIssuesToNewState({
+            state: beforeState,
+            issueId: p.issue_id
+        }, {
+            newState
+        });
+        return issuesMovedCount;
+    });
+}
+exports.moveIssues = moveIssues;
+
+
+/***/ }),
+
+/***/ 580:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getActionParameters = void 0;
+const core_1 = __nccwpck_require__(186);
+const requiredParameters = ['linear_token'];
+const filterParameters = ['status_from', 'issue_id'];
+const mutationParameters = ['status_to'];
+const actionParameters = [
+    ...requiredParameters,
+    ...filterParameters,
+    ...mutationParameters
+];
+function validateParameters(p) {
+    if (!p.linear_token) {
+        throw new Error('LINEAR API KEY not defined');
+    }
+    if (!filterParameters.some(parameter => p[parameter])) {
+        throw new Error(`At least one issue filtering param should be defined. Possible options are: ${filterParameters.join(', ')}`);
+    }
+    if (!mutationParameters.some(parameter => p[parameter])) {
+        throw new Error(`At least one issue mutation param should be defined. Possible options are: ${mutationParameters.join(', ')}`);
+    }
+}
+function getActionParameters() {
+    const result = actionParameters.reduce((res, cur) => {
+        res[cur] = (0, core_1.getInput)(cur);
+        return res;
+    }, {});
+    validateParameters(result);
+    return result;
+}
+exports.getActionParameters = getActionParameters;
 
 
 /***/ }),

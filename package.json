@@ -26,18 +26,19 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.6.0",
-    "@linear/sdk": "^1.21.0"
+    "@linear/sdk": "^1.21.0",
+    "@types/jest": "^27.0.3"
   },
   "devDependencies": {
     "@types/node": "^16.11.15",
-    "@typescript-eslint/parser": "^5.8.0",
+    "@typescript-eslint/parser": "^5.8.1",
     "@vercel/ncc": "^0.31.1",
-    "eslint": "^7.32.0",
+    "eslint": "^8.5.0",
     "eslint-plugin-github": "^4.3.5",
-    "eslint-plugin-jest": "^25.3.0",
+    "eslint-plugin-jest": "^25.3.2",
     "jest": "^27.4.5",
     "js-yaml": "^4.1.0",
-    "prettier": "2.4.1",
+    "prettier": "2.5.1",
     "ts-jest": "^27.1.2",
     "typescript": "^4.5.4"
   }
