@@ -46,7 +46,7 @@ class LinearAPIClient {
         filter.state.id = { eq: state.id };
     }
     addIssueIdToFilter(filter, issueId) {
-        filter.id = { eq: issueId };
+        filter.number = { eq: issueId };
     }
     getIssues(filter) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -166,7 +166,7 @@ function moveIssues(p) {
         }
         const issuesMovedCount = client.moveIssuesToNewState({
             state: beforeState,
-            issueId: p.issue_id
+            issueId: Number(p.issue_number)
         }, {
             newState
         });
@@ -187,7 +187,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getActionParameters = void 0;
 const core_1 = __nccwpck_require__(186);
 const requiredParameters = ['linear_token'];
-const filterParameters = ['status_from', 'issue_id'];
+const filterParameters = ['status_from', 'issue_number'];
 const mutationParameters = ['status_to'];
 const actionParameters = [
     ...requiredParameters,
@@ -200,6 +200,10 @@ function validateParameters(p) {
     }
     if (!filterParameters.some(parameter => p[parameter])) {
         throw new Error(`At least one issue filtering param should be defined. Possible options are: ${filterParameters.join(', ')}`);
+    }
+    const isIssueIdValid = p.issue_number && Number(p.issue_number) > 0;
+    if (!isIssueIdValid) {
+        throw new Error('issue_number must be a number');
     }
     if (!mutationParameters.some(parameter => p[parameter])) {
         throw new Error(`At least one issue mutation param should be defined. Possible options are: ${mutationParameters.join(', ')}`);

@@ -30,8 +30,8 @@ export class LinearAPIClient {
     filter.state.id = { eq: state.id };
   }
 
-  private addIssueIdToFilter(filter: IssueFilter, issueId: string) {
-    filter.id = { eq: issueId };
+  private addIssueIdToFilter(filter: IssueFilter, issueId: number) {
+    filter.number = { eq: issueId };
   }
 
   async getIssues(filter: IssueFilter) {
@@ -42,7 +42,7 @@ export class LinearAPIClient {
   async moveIssuesToNewState(
     issueFilter: {
       state?: WorkflowState;
-      issueId?: string;
+      issueId?: number;
     },
     issueMutation: {
       newState?: WorkflowState;
