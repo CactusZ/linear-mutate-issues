@@ -1,16 +1,21 @@
-name: 'Move Linear Issues'
-description: 'Move Linear Issues from one state to another'
+name: 'Mutate Linear Issues'
+description: 'Mutate Linear Issues by changing their state'
 author: 'Igor Kasevich'
 inputs:
-  LINEAR_TOKEN:
+  linear_token:
     required: true
     description: 'Linear API token'
+
+  # Issue filtering inputs (at least one required)
   state_from:
-    required: true
-    description: 'move from state'
+    description: 'State name (case sensitive) to filter issues'
+  issue_id:
+    description: 'issue id to mutate'
+
+  # Issue mutation options (at least one required)
   state_to:
     required: true
-    description: 'move to state'
+    description: 'State name (case sensitive)'
 runs:
   using: 'node16'
   main: 'dist/index.js'

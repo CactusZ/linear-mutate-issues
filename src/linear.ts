@@ -44,7 +44,9 @@ export class LinearAPIClient {
       state?: WorkflowState;
       issueId?: string;
     },
-    newState: WorkflowState
+    issueMutation: {
+      newState?: WorkflowState;
+    }
   ) {
     const filter: IssueFilter = {};
     if (issueFilter.state) {
@@ -59,7 +61,11 @@ export class LinearAPIClient {
       debug(`Found ${issueCount} issues to move`);
       for (const issue of issues) {
         debug(`updating issue ${issue.id}`);
-        await this.moveIssueToNewState(issue, newState);
+        if (issueMutation.newState) {
+          await this.moveIssueToNewState(issue, issueMutation.newState);
+        } else {
+          throw new Error('No mutation defined');
+        }
       }
     } else {
       debug(`No issues found with filter ${JSON.stringify(filter)}`);

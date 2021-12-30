@@ -1,40 +1,35 @@
 import assert from 'assert';
 import { LinearAPIClient } from './linear';
+import { Parameters } from './parameters';
 
-export async function moveIssues(
-  previousStateName: string,
-  newStateName: string,
-  apiKey: string
-): Promise<number> {
-  if (!apiKey) {
-    throw new Error('LINEAR API KEY not defined');
-  }
-
-  if (!previousStateName) {
-    throw new Error('previous state name not defined');
-  }
-
-  if (!newStateName) {
-    throw new Error('new state name not defined');
-  }
-  const client = new LinearAPIClient(apiKey);
+export async function moveIssues(p: Parameters): Promise<number> {
+  const client = new LinearAPIClient(p.linear_token);
   const allStates = await client.getAllStates();
   const stateNames = allStates.map(s => s.name);
-  const beforeState = allStates.find(state => state.name === previousStateName);
-  const afterState = allStates.find(state => state.name === newStateName);
-  assert(
-    beforeState,
-    `previous state with name ${previousStateName} not found. Found states ${stateNames}`
-  );
-  assert(
-    afterState,
-    `new state with name ${newStateName} not found. Found states ${stateNames}`
-  );
+  const beforeState = allStates.find(state => state.name === p.state_from);
+  const newState = allStates.find(state => state.name === p.state_to);
+  if (p.state_from) {
+    assert(
+      beforeState,
+      `previous state with name ${p.state_from} not found. Found states ${stateNames}`
+    );
+  }
+
+  if (p.state_to) {
+    assert(
+      newState,
+      `new state with name ${p.state_to} not found. Found states ${stateNames}`
+    );
+  }
+
   const issuesMovedCount = client.moveIssuesToNewState(
     {
-      state: beforeState
+      state: beforeState,
+      issueId: p.issue_id
     },
-    afterState
+    {
+      newState
+    }
   );
   return issuesMovedCount;
 }
