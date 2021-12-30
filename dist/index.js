@@ -156,13 +156,13 @@ function moveIssues(p) {
         const client = new linear_1.LinearAPIClient(p.linear_token);
         const allStates = yield client.getAllStates();
         const stateNames = allStates.map(s => s.name);
-        const beforeState = allStates.find(state => state.name === p.state_from);
-        const newState = allStates.find(state => state.name === p.state_to);
-        if (p.state_from) {
-            (0, assert_1.default)(beforeState, `previous state with name ${p.state_from} not found. Found states ${stateNames}`);
+        const beforeState = allStates.find(state => state.name === p.status_from);
+        const newState = allStates.find(state => state.name === p.status_to);
+        if (p.status_from) {
+            (0, assert_1.default)(beforeState, `previous state with name ${p.status_from} not found. Found states ${stateNames}`);
         }
-        if (p.state_to) {
-            (0, assert_1.default)(newState, `new state with name ${p.state_to} not found. Found states ${stateNames}`);
+        if (p.status_to) {
+            (0, assert_1.default)(newState, `new state with name ${p.status_to} not found. Found states ${stateNames}`);
         }
         const issuesMovedCount = client.moveIssuesToNewState({
             state: beforeState,
@@ -187,8 +187,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getActionParameters = void 0;
 const core_1 = __nccwpck_require__(186);
 const requiredParameters = ['linear_token'];
-const filterParameters = ['state_from', 'issue_id'];
-const mutationParameters = ['state_to'];
+const filterParameters = ['status_from', 'issue_id'];
+const mutationParameters = ['status_to'];
 const actionParameters = [
     ...requiredParameters,
     ...filterParameters,

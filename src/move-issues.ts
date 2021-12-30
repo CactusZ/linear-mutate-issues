@@ -6,19 +6,19 @@ export async function moveIssues(p: Parameters): Promise<number> {
   const client = new LinearAPIClient(p.linear_token);
   const allStates = await client.getAllStates();
   const stateNames = allStates.map(s => s.name);
-  const beforeState = allStates.find(state => state.name === p.state_from);
-  const newState = allStates.find(state => state.name === p.state_to);
-  if (p.state_from) {
+  const beforeState = allStates.find(state => state.name === p.status_from);
+  const newState = allStates.find(state => state.name === p.status_to);
+  if (p.status_from) {
     assert(
       beforeState,
-      `previous state with name ${p.state_from} not found. Found states ${stateNames}`
+      `previous state with name ${p.status_from} not found. Found states ${stateNames}`
     );
   }
 
-  if (p.state_to) {
+  if (p.status_to) {
     assert(
       newState,
-      `new state with name ${p.state_to} not found. Found states ${stateNames}`
+      `new state with name ${p.status_to} not found. Found states ${stateNames}`
     );
   }
 

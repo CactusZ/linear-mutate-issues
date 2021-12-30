@@ -7,15 +7,15 @@ inputs:
     description: 'Linear API token'
 
   # Issue filtering inputs (at least one required)
-  state_from:
-    description: 'State name (case sensitive) to filter issues'
+  status_from:
+    description: 'Status name (case sensitive) to filter issues'
   issue_id:
     description: 'issue id to mutate'
 
   # Issue mutation options (at least one required)
-  state_to:
+  status_to:
     required: true
-    description: 'State name (case sensitive)'
+    description: 'New status name (case sensitive)'
 runs:
   using: 'node16'
   main: 'dist/index.js'

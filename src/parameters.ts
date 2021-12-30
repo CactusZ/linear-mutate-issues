@@ -6,14 +6,14 @@ type RequiredParameters = {
   [key in typeof requiredParameters[number]]: string;
 };
 
-const filterParameters = ['state_from', 'issue_id'] as const;
+const filterParameters = ['status_from', 'issue_id'] as const;
 
 type IssueFilterParameters = {
   // eslint-disable-next-line no-unused-vars
   [key in typeof filterParameters[number]]: string;
 };
 
-const mutationParameters = ['state_to'] as const;
+const mutationParameters = ['status_to'] as const;
 type IssueMutationParameters = {
   // eslint-disable-next-line no-unused-vars
   [key in typeof mutationParameters[number]]: string;
