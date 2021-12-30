@@ -202,7 +202,7 @@ function validateParameters(p) {
         throw new Error(`At least one issue filtering param should be defined. Possible options are: ${filterParameters.join(', ')}`);
     }
     const isIssueIdValid = p.issue_number && Number(p.issue_number) > 0;
-    if (!isIssueIdValid) {
+    if (p.issue_number && !isIssueIdValid) {
         throw new Error('issue_number must be a number');
     }
     if (!mutationParameters.some(parameter => p[parameter])) {

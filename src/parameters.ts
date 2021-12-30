@@ -42,7 +42,7 @@ function validateParameters(p: Parameters) {
   }
 
   const isIssueIdValid = p.issue_number && Number(p.issue_number) > 0;
-  if (!isIssueIdValid) {
+  if (p.issue_number && !isIssueIdValid) {
     throw new Error('issue_number must be a number');
   }
 
