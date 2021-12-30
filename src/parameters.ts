@@ -6,7 +6,7 @@ type RequiredParameters = {
   [key in typeof requiredParameters[number]]: string;
 };
 
-const filterParameters = ['status_from', 'issue_id'] as const;
+const filterParameters = ['status_from', 'issue_number'] as const;
 
 type IssueFilterParameters = {
   // eslint-disable-next-line no-unused-vars
@@ -39,6 +39,11 @@ function validateParameters(p: Parameters) {
         ', '
       )}`
     );
+  }
+
+  const isIssueIdValid = p.issue_number && Number(p.issue_number) > 0;
+  if (p.issue_number && !isIssueIdValid) {
+    throw new Error('issue_number must be a number');
   }
 
   if (!mutationParameters.some(parameter => p[parameter])) {

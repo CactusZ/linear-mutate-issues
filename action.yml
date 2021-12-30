@@ -9,8 +9,8 @@ inputs:
   # Issue filtering inputs (at least one required)
   status_from:
     description: 'Status name (case sensitive) to filter issues'
-  issue_id:
-    description: 'issue id to mutate'
+  issue_number:
+    description: 'issue number to mutate'
 
   # Issue mutation options (at least one required)
   status_to:
@@ -19,3 +19,6 @@ inputs:
 runs:
   using: 'node16'
   main: 'dist/index.js'
+branding:
+  icon: 'edit'
+  color: 'blue'

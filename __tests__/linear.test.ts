@@ -49,7 +49,7 @@ describe('LinearAPIClient class', () => {
     await client.moveIssuesToNewState(
       {
         state: states[0],
-        issueId: 'test'
+        issueId: 2
       },
       {
         newState: states[1]
@@ -62,8 +62,8 @@ describe('LinearAPIClient class', () => {
             eq: states[0].id
           }
         },
-        id: {
-          eq: 'test'
+        number: {
+          eq: 2
         }
       }
     });
@@ -79,7 +79,7 @@ describe('LinearAPIClient class', () => {
     await client.moveIssuesToNewState(
       {
         state: states[0],
-        issueId: 'test'
+        issueId: 2
       },
       {
         newState: states[1]
@@ -92,8 +92,8 @@ describe('LinearAPIClient class', () => {
             eq: states[0].id
           }
         },
-        id: {
-          eq: 'test'
+        number: {
+          eq: 2
         }
       }
     });

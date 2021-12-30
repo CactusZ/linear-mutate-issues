@@ -25,7 +25,7 @@ export async function moveIssues(p: Parameters): Promise<number> {
   const issuesMovedCount = client.moveIssuesToNewState(
     {
       state: beforeState,
-      issueId: p.issue_id
+      issueId: Number(p.issue_number)
     },
     {
       newState
