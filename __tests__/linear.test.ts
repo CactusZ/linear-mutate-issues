@@ -51,7 +51,9 @@ describe('LinearAPIClient class', () => {
         state: states[0],
         issueId: 'test'
       },
-      states[1]
+      {
+        newState: states[1]
+      }
     );
     expect(issuesMethodMock).toBeCalledWith({
       filter: {
@@ -79,7 +81,9 @@ describe('LinearAPIClient class', () => {
         state: states[0],
         issueId: 'test'
       },
-      states[1]
+      {
+        newState: states[1]
+      }
     );
     expect(issuesMethodMock).toBeCalledWith({
       filter: {

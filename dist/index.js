@@ -54,7 +54,7 @@ class LinearAPIClient {
             return response.nodes;
         });
     }
-    moveIssuesToNewState(issueFilter, newState) {
+    moveIssuesToNewState(issueFilter, issueMutation) {
         return __awaiter(this, void 0, void 0, function* () {
             const filter = {};
             if (issueFilter.state) {
@@ -69,7 +69,12 @@ class LinearAPIClient {
                 (0, core_1.debug)(`Found ${issueCount} issues to move`);
                 for (const issue of issues) {
                     (0, core_1.debug)(`updating issue ${issue.id}`);
-                    yield this.moveIssueToNewState(issue, newState);
+                    if (issueMutation.newState) {
+                        yield this.moveIssueToNewState(issue, issueMutation.newState);
+                    }
+                    else {
+                        throw new Error('No mutation defined');
+                    }
                 }
             }
             else {
@@ -106,13 +111,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(186);
 const move_issues_1 = __nccwpck_require__(167);
+const parameters_1 = __nccwpck_require__(580);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const apiKey = (0, core_1.getInput)('LINEAR_TOKEN');
-            const stateFrom = (0, core_1.getInput)('state_from');
-            const stateTo = (0, core_1.getInput)('state_to');
-            const movedIssuesCount = yield (0, move_issues_1.moveIssues)(stateFrom, stateTo, apiKey);
+            const parameters = (0, parameters_1.getActionParameters)();
+            const movedIssuesCount = yield (0, move_issues_1.moveIssues)(parameters);
             (0, core_1.notice)(`${movedIssuesCount} issues have been moved!`);
         }
         catch (error) {
@@ -147,31 +151,69 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.moveIssues = void 0;
 const assert_1 = __importDefault(__nccwpck_require__(357));
 const linear_1 = __nccwpck_require__(749);
-function moveIssues(previousStateName, newStateName, apiKey) {
+function moveIssues(p) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!apiKey) {
-            throw new Error('LINEAR API KEY not defined');
-        }
-        if (!previousStateName) {
-            throw new Error('previous state name not defined');
-        }
-        if (!newStateName) {
-            throw new Error('new state name not defined');
-        }
-        const client = new linear_1.LinearAPIClient(apiKey);
+        const client = new linear_1.LinearAPIClient(p.linear_token);
         const allStates = yield client.getAllStates();
         const stateNames = allStates.map(s => s.name);
-        const beforeState = allStates.find(state => state.name === previousStateName);
-        const afterState = allStates.find(state => state.name === newStateName);
-        (0, assert_1.default)(beforeState, `previous state with name ${previousStateName} not found. Found states ${stateNames}`);
-        (0, assert_1.default)(afterState, `new state with name ${newStateName} not found. Found states ${stateNames}`);
+        const beforeState = allStates.find(state => state.name === p.state_from);
+        const newState = allStates.find(state => state.name === p.state_to);
+        if (p.state_from) {
+            (0, assert_1.default)(beforeState, `previous state with name ${p.state_from} not found. Found states ${stateNames}`);
+        }
+        if (p.state_to) {
+            (0, assert_1.default)(newState, `new state with name ${p.state_to} not found. Found states ${stateNames}`);
+        }
         const issuesMovedCount = client.moveIssuesToNewState({
-            state: beforeState
-        }, afterState);
+            state: beforeState,
+            issueId: p.issue_id
+        }, {
+            newState
+        });
         return issuesMovedCount;
     });
 }
 exports.moveIssues = moveIssues;
+
+
+/***/ }),
+
+/***/ 580:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getActionParameters = void 0;
+const core_1 = __nccwpck_require__(186);
+const requiredParameters = ['linear_token'];
+const filterParameters = ['state_from', 'issue_id'];
+const mutationParameters = ['state_to'];
+const actionParameters = [
+    ...requiredParameters,
+    ...filterParameters,
+    ...mutationParameters
+];
+function validateParameters(p) {
+    if (!p.linear_token) {
+        throw new Error('LINEAR API KEY not defined');
+    }
+    if (!filterParameters.some(parameter => p[parameter])) {
+        throw new Error(`At least one issue filtering param should be defined. Possible options are: ${filterParameters.join(', ')}`);
+    }
+    if (!mutationParameters.some(parameter => p[parameter])) {
+        throw new Error(`At least one issue mutation param should be defined. Possible options are: ${mutationParameters.join(', ')}`);
+    }
+}
+function getActionParameters() {
+    const result = actionParameters.reduce((res, cur) => {
+        res[cur] = (0, core_1.getInput)(cur);
+        return res;
+    }, {});
+    validateParameters(result);
+    return result;
+}
+exports.getActionParameters = getActionParameters;
 
 
 /***/ }),
