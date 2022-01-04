@@ -1,9 +1,11 @@
+import { debug } from '@actions/core';
 import assert from 'assert';
 import { LinearAPIClient } from './linear';
 import { Parameters } from './parameters';
 
 export async function moveIssues(p: Parameters): Promise<number> {
   const client = new LinearAPIClient(p.linear_token);
+  debug('Retrieving Statuses from API');
   const allStates = await client.getAllStates();
   const stateNames = allStates.map(s => s.name);
   const beforeState = allStates.find(state => state.name === p.status_from);
@@ -21,8 +23,8 @@ export async function moveIssues(p: Parameters): Promise<number> {
       `new state with name ${p.status_to} not found. Found states ${stateNames}`
     );
   }
-
-  const issuesMovedCount = client.moveIssuesToNewState(
+  debug('Moving issues');
+  const issuesMovedCount = await client.moveIssuesToNewState(
     {
       state: beforeState,
       issueId: Number(p.issue_number)
