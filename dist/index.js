@@ -66,11 +66,17 @@ class LinearAPIClient {
             const issues = yield this.getIssues(filter);
             const issueCount = issues.length;
             if (issueCount) {
-                (0, core_1.debug)(`Found ${issueCount} issues to move`);
+                (0, core_1.info)(`Found ${issueCount} issues to move`);
                 for (const issue of issues) {
-                    (0, core_1.debug)(`updating issue ${issue.id}`);
+                    (0, core_1.info)(`updating issue ${issue.id}`);
                     if (issueMutation.newState) {
-                        yield this.moveIssueToNewState(issue, issueMutation.newState);
+                        try {
+                            yield this.moveIssueToNewState(issue, issueMutation.newState);
+                        }
+                        catch (e) {
+                            (0, core_1.error)(e);
+                            throw new Error(`Error while moving issue ${issue.number}. Error=${e}`);
+                        }
                     }
                     else {
                         throw new Error('No mutation defined');
@@ -78,14 +84,14 @@ class LinearAPIClient {
                 }
             }
             else {
-                (0, core_1.debug)(`No issues found with filter ${JSON.stringify(filter)}`);
+                (0, core_1.info)(`No issues found with filter ${JSON.stringify(filter)}`);
             }
             return issueCount;
         });
     }
     moveIssueToNewState(issue, state) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.client.issueUpdate(issue.id, { stateId: state.id });
+            return this.client.issueUpdate(issue.id, { stateId: state.id });
         });
     }
 }
@@ -120,8 +126,10 @@ function run() {
             (0, core_1.notice)(`${movedIssuesCount} issues have been moved!`);
         }
         catch (error) {
-            if (error instanceof Error)
+            if (error instanceof Error) {
+                (0, core_1.error)(error);
                 (0, core_1.setFailed)(error.message);
+            }
         }
     });
 }
@@ -149,11 +157,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.moveIssues = void 0;
+const core_1 = __nccwpck_require__(186);
 const assert_1 = __importDefault(__nccwpck_require__(357));
 const linear_1 = __nccwpck_require__(749);
 function moveIssues(p) {
     return __awaiter(this, void 0, void 0, function* () {
         const client = new linear_1.LinearAPIClient(p.linear_token);
+        (0, core_1.info)('Retrieving Statuses from API');
         const allStates = yield client.getAllStates();
         const stateNames = allStates.map(s => s.name);
         const beforeState = allStates.find(state => state.name === p.status_from);
@@ -164,7 +174,8 @@ function moveIssues(p) {
         if (p.status_to) {
             (0, assert_1.default)(newState, `new state with name ${p.status_to} not found. Found states ${stateNames}`);
         }
-        const issuesMovedCount = client.moveIssuesToNewState({
+        (0, core_1.info)('Moving issues');
+        const issuesMovedCount = yield client.moveIssuesToNewState({
             state: beforeState,
             issueId: Number(p.issue_number)
         }, {

@@ -1,4 +1,4 @@
-import { setFailed, notice } from '@actions/core';
+import { setFailed, notice, error as logError } from '@actions/core';
 import { moveIssues } from './move-issues';
 import { getActionParameters } from './parameters';
 
@@ -9,7 +9,10 @@ async function run(): Promise<void> {
 
     notice(`${movedIssuesCount} issues have been moved!`);
   } catch (error) {
-    if (error instanceof Error) setFailed(error.message);
+    if (error instanceof Error) {
+      logError(error);
+      setFailed(error.message);
+    }
   }
 }
 
