@@ -1,5 +1,5 @@
 import { info, error } from '@actions/core';
-import { Issue, LinearClient, WorkflowState } from '@linear/sdk';
+import { Issue, LinearClient, LinearError, WorkflowState } from '@linear/sdk';
 import assert from 'assert';
 
 type IssuesFuncParams = Exclude<
@@ -66,6 +66,14 @@ export class LinearAPIClient {
             await this.moveIssueToNewState(issue, issueMutation.newState);
           } catch (e) {
             error(e as Error);
+            if (e instanceof LinearError) {
+              error(`Failed HTTP status:${e.status}`);
+              error(`Failed response data:${e.data}`);
+              error(`Failed query: ${e.query}`);
+              error(`Error type: ${e.type}`);
+              error(`Failed errors: ${e.errors}`);
+              error(`Original: ${e.raw}`);
+            }
             throw new Error(
               `Error while moving issue ${issue.number}. Error=${e}`
             );
