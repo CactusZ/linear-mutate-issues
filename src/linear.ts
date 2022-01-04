@@ -1,4 +1,4 @@
-import { debug } from '@actions/core';
+import { info } from '@actions/core';
 import { Issue, LinearClient, WorkflowState } from '@linear/sdk';
 import assert from 'assert';
 
@@ -58,9 +58,9 @@ export class LinearAPIClient {
     const issues = await this.getIssues(filter);
     const issueCount = issues.length;
     if (issueCount) {
-      debug(`Found ${issueCount} issues to move`);
+      info(`Found ${issueCount} issues to move`);
       for (const issue of issues) {
-        debug(`updating issue ${issue.id}`);
+        info(`updating issue ${issue.id}`);
         if (issueMutation.newState) {
           await this.moveIssueToNewState(issue, issueMutation.newState);
         } else {
@@ -68,7 +68,7 @@ export class LinearAPIClient {
         }
       }
     } else {
-      debug(`No issues found with filter ${JSON.stringify(filter)}`);
+      info(`No issues found with filter ${JSON.stringify(filter)}`);
     }
 
     return issueCount;
