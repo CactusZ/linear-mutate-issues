@@ -1,4 +1,4 @@
-import { info } from '@actions/core';
+import { info, error } from '@actions/core';
 import { Issue, LinearClient, WorkflowState } from '@linear/sdk';
 import assert from 'assert';
 
@@ -62,7 +62,14 @@ export class LinearAPIClient {
       for (const issue of issues) {
         info(`updating issue ${issue.id}`);
         if (issueMutation.newState) {
-          await this.moveIssueToNewState(issue, issueMutation.newState);
+          try {
+            await this.moveIssueToNewState(issue, issueMutation.newState);
+          } catch (e) {
+            error(e as Error);
+            throw new Error(
+              `Error while moving issue ${issue.number}. Error=${e}`
+            );
+          }
         } else {
           throw new Error('No mutation defined');
         }
@@ -75,6 +82,6 @@ export class LinearAPIClient {
   }
 
   private async moveIssueToNewState(issue: Issue, state: WorkflowState) {
-    await this.client.issueUpdate(issue.id, { stateId: state.id });
+    return this.client.issueUpdate(issue.id, { stateId: state.id });
   }
 }
