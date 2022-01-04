@@ -75,6 +75,14 @@ class LinearAPIClient {
                         }
                         catch (e) {
                             (0, core_1.error)(e);
+                            if (e instanceof sdk_1.LinearError) {
+                                (0, core_1.error)(`Failed HTTP status:${e.status}`);
+                                (0, core_1.error)(`Failed response data:${e.data}`);
+                                (0, core_1.error)(`Failed query: ${e.query}`);
+                                (0, core_1.error)(`Error type: ${e.type}`);
+                                (0, core_1.error)(`Failed errors: ${e.errors}`);
+                                (0, core_1.error)(`Original: ${e.raw}`);
+                            }
                             throw new Error(`Error while moving issue ${issue.number}. Error=${e}`);
                         }
                     }
