@@ -1,5 +1,11 @@
 import { info, error } from '@actions/core';
-import { Issue, LinearClient, LinearError, WorkflowState } from '@linear/sdk';
+import {
+  Issue,
+  LinearClient,
+  LinearError,
+  Team,
+  WorkflowState
+} from '@linear/sdk';
 import assert from 'assert';
 
 type IssuesFuncParams = Exclude<
@@ -15,9 +21,28 @@ export class LinearAPIClient {
     this.client = new LinearClient({ apiKey });
   }
 
-  async getAllStates() {
+  async getAllStates({ team }: { team?: Team }) {
     const allStates = (await this.client.workflowStates()).nodes;
-    return allStates;
+
+    const teams = team
+      ? await Promise.all(allStates.map(state => state.team))
+      : [];
+
+    return allStates.filter((state, index) => {
+      if (team) {
+        const stateTeam = teams[index];
+        return stateTeam?.id === team.id;
+      } else {
+        return true;
+      }
+    });
+  }
+
+  async getTeamByName(name: string) {
+    info('Retrieving Team from API');
+    const teams = (await this.client.teams()).nodes;
+    const team = teams.find(t => t.name === name);
+    return team;
   }
 
   async getIssueById(issueId: string) {
@@ -34,6 +59,10 @@ export class LinearAPIClient {
     filter.number = { eq: issueId };
   }
 
+  private addTeamToFilter(filter: IssueFilter, team: Team) {
+    filter.team = { id: { eq: team.id } };
+  }
+
   async getIssues(filter: IssueFilter) {
     const response = await this.client.issues({ filter });
     return response.nodes;
@@ -43,6 +72,7 @@ export class LinearAPIClient {
     issueFilter: {
       state?: WorkflowState;
       issueId?: number;
+      team?: Team;
     },
     issueMutation: {
       newState?: WorkflowState;
@@ -54,6 +84,9 @@ export class LinearAPIClient {
     }
     if (issueFilter.issueId) {
       this.addIssueIdToFilter(filter, issueFilter.issueId);
+    }
+    if (issueFilter.team) {
+      this.addTeamToFilter(filter, issueFilter.team);
     }
     const issues = await this.getIssues(filter);
     const issueCount = issues.length;
