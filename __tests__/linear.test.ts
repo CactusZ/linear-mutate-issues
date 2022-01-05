@@ -41,7 +41,7 @@ describe('LinearAPIClient class', () => {
   });
 
   it('getAllStates()', async () => {
-    const fetchedStates = await client.getAllStates();
+    const fetchedStates = await client.getAllStates({});
     expect(fetchedStates).toEqual(states);
   });
 

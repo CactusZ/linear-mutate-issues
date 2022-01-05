@@ -6,7 +6,7 @@ type RequiredParameters = {
   [key in typeof requiredParameters[number]]: string;
 };
 
-const filterParameters = ['status_from', 'issue_number'] as const;
+const filterParameters = ['status_from', 'issue_number', 'team_name'] as const;
 
 type IssueFilterParameters = {
   // eslint-disable-next-line no-unused-vars

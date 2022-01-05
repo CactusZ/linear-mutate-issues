@@ -5,8 +5,17 @@ import { Parameters } from './parameters';
 
 export async function moveIssues(p: Parameters): Promise<number> {
   const client = new LinearAPIClient(p.linear_token);
+
+  const team = p.team_name
+    ? await client.getTeamByName(p.team_name)
+    : undefined;
+
+  if (p.team_name) {
+    assert(team, `team with name ${p.team_name} not found`);
+  }
+
   info('Retrieving Statuses from API');
-  const allStates = await client.getAllStates();
+  const allStates = await client.getAllStates({ team });
   const stateNames = allStates.map(s => s.name);
   const beforeState = allStates.find(state => state.name === p.status_from);
   const newState = allStates.find(state => state.name === p.status_to);
@@ -27,7 +36,8 @@ export async function moveIssues(p: Parameters): Promise<number> {
   const issuesMovedCount = await client.moveIssuesToNewState(
     {
       state: beforeState,
-      issueId: Number(p.issue_number)
+      issueId: Number(p.issue_number),
+      team
     },
     {
       newState
