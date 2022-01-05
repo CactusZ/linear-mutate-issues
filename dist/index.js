@@ -28,10 +28,29 @@ class LinearAPIClient {
         (0, assert_1.default)(apiKey);
         this.client = new sdk_1.LinearClient({ apiKey });
     }
-    getAllStates() {
+    getAllStates({ team }) {
         return __awaiter(this, void 0, void 0, function* () {
             const allStates = (yield this.client.workflowStates()).nodes;
-            return allStates;
+            const teams = team
+                ? yield Promise.all(allStates.map(state => state.team))
+                : [];
+            return allStates.filter((state, index) => {
+                if (team) {
+                    const stateTeam = teams[index];
+                    return (stateTeam === null || stateTeam === void 0 ? void 0 : stateTeam.id) === team.id;
+                }
+                else {
+                    return true;
+                }
+            });
+        });
+    }
+    getTeamByName(name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            (0, core_1.info)('Retrieving Team from API');
+            const teams = (yield this.client.teams()).nodes;
+            const team = teams.find(t => t.name === name);
+            return team;
         });
     }
     getIssueById(issueId) {
@@ -48,6 +67,9 @@ class LinearAPIClient {
     addIssueIdToFilter(filter, issueId) {
         filter.number = { eq: issueId };
     }
+    addTeamToFilter(filter, team) {
+        filter.team = { id: { eq: team.id } };
+    }
     getIssues(filter) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = yield this.client.issues({ filter });
@@ -62,6 +84,9 @@ class LinearAPIClient {
             }
             if (issueFilter.issueId) {
                 this.addIssueIdToFilter(filter, issueFilter.issueId);
+            }
+            if (issueFilter.team) {
+                this.addTeamToFilter(filter, issueFilter.team);
             }
             const issues = yield this.getIssues(filter);
             const issueCount = issues.length;
@@ -171,8 +196,14 @@ const linear_1 = __nccwpck_require__(749);
 function moveIssues(p) {
     return __awaiter(this, void 0, void 0, function* () {
         const client = new linear_1.LinearAPIClient(p.linear_token);
+        const team = p.team_name
+            ? yield client.getTeamByName(p.team_name)
+            : undefined;
+        if (p.team_name) {
+            (0, assert_1.default)(team, `team with name ${p.team_name} not found`);
+        }
         (0, core_1.info)('Retrieving Statuses from API');
-        const allStates = yield client.getAllStates();
+        const allStates = yield client.getAllStates({ team });
         const stateNames = allStates.map(s => s.name);
         const beforeState = allStates.find(state => state.name === p.status_from);
         const newState = allStates.find(state => state.name === p.status_to);
@@ -185,7 +216,8 @@ function moveIssues(p) {
         (0, core_1.info)('Moving issues');
         const issuesMovedCount = yield client.moveIssuesToNewState({
             state: beforeState,
-            issueId: Number(p.issue_number)
+            issueId: Number(p.issue_number),
+            team
         }, {
             newState
         });
@@ -206,7 +238,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getActionParameters = void 0;
 const core_1 = __nccwpck_require__(186);
 const requiredParameters = ['linear_token'];
-const filterParameters = ['status_from', 'issue_number'];
+const filterParameters = ['status_from', 'issue_number', 'team_name'];
 const mutationParameters = ['status_to'];
 const actionParameters = [
     ...requiredParameters,
