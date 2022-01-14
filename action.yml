@@ -5,6 +5,8 @@ inputs:
   linear_token:
     required: true
     description: 'Linear API token'
+  team_name:
+    description: 'Case-sensitive team name in Linear'
 
   # Issue filtering inputs (at least one required)
   status_from:
