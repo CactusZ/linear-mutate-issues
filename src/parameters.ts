@@ -51,7 +51,7 @@ function validateParameters(p: Parameters) {
   }
 
   const isAllowedTeamIdentifier =
-    p.team_identifier && p.team_identifier.split(/ ,/g).length;
+    p.team_identifier && p.team_identifier.split(/ |,/g).filter(x => x).length;
   if (p.team_identifier && !isAllowedTeamIdentifier) {
     throw new Error(
       'allowed_team_identifiers must be a comma separated list of team identifiers'
@@ -77,7 +77,8 @@ export function getActionParameters() {
     ...result,
     /* eslint-disable-next-line camelcase */
     team_identifier: result.team_identifier
-      .split(/ ,/g)
+      .split(/ |,/g)
+      .filter(x => x)
       .map(x => x.toLocaleUpperCase())
   } as Omit<Parameters, 'team_identifier'> & {
     team_identifier: string[];

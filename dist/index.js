@@ -264,7 +264,7 @@ function validateParameters(p) {
     if (p.issue_number && !isIssueIdValid) {
         throw new Error('issue_number must be a number');
     }
-    const isAllowedTeamIdentifier = p.team_identifier && p.team_identifier.split(/ ,/g).length;
+    const isAllowedTeamIdentifier = p.team_identifier && p.team_identifier.split(/ |,/g).filter(x => x).length;
     if (p.team_identifier && !isAllowedTeamIdentifier) {
         throw new Error('allowed_team_identifiers must be a comma separated list of team identifiers');
     }
@@ -281,7 +281,8 @@ function getActionParameters() {
     return Object.assign(Object.assign({}, result), { 
         /* eslint-disable-next-line camelcase */
         team_identifier: result.team_identifier
-            .split(/ ,/g)
+            .split(/ |,/g)
+            .filter(x => x)
             .map(x => x.toLocaleUpperCase()) });
 }
 exports.getActionParameters = getActionParameters;
