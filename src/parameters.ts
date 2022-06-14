@@ -6,7 +6,12 @@ type RequiredParameters = {
   [key in typeof requiredParameters[number]]: string;
 };
 
-const filterParameters = ['status_from', 'issue_number', 'team_name'] as const;
+const filterParameters = [
+  'status_from',
+  'issue_number',
+  'team_identifier',
+  'allowed_team_identifiers'
+] as const;
 
 type IssueFilterParameters = {
   // eslint-disable-next-line no-unused-vars
@@ -46,6 +51,15 @@ function validateParameters(p: Parameters) {
     throw new Error('issue_number must be a number');
   }
 
+  const isAllowedTeamIdentifiersAnArray =
+    p.allowed_team_identifiers &&
+    p.allowed_team_identifiers.split(/ ,/g).length;
+  if (p.allowed_team_identifiers && !isAllowedTeamIdentifiersAnArray) {
+    throw new Error(
+      'allowed_team_identifiers must be a comma separated list of team identifiers'
+    );
+  }
+
   if (!mutationParameters.some(parameter => p[parameter])) {
     throw new Error(
       `At least one issue mutation param should be defined. Possible options are: ${mutationParameters.join(
@@ -61,5 +75,15 @@ export function getActionParameters() {
     return res;
   }, {} as Parameters);
   validateParameters(result);
-  return result;
+  return {
+    ...result,
+    /* eslint-disable-next-line camelcase */
+    allowed_team_identifiers: result.allowed_team_identifiers
+      .split(/ ,/g)
+      .map(x => x.toLocaleUpperCase()),
+    // eslint-disable-next-line camelcase
+    team_identifier: result.team_identifier.toLocaleUpperCase()
+  } as Omit<Parameters, 'allowed_team_identifiers'> & {
+    allowed_team_identifiers: string[];
+  };
 }

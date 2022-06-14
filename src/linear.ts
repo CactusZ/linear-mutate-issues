@@ -38,11 +38,11 @@ export class LinearAPIClient {
     });
   }
 
-  async getTeamByName(name: string) {
+  async getTeamByKey(key: string[]) {
     info('Retrieving Team from API');
     const teams = (await this.client.teams()).nodes;
-    const team = teams.find(t => t.name === name);
-    return team;
+    const teamsFiltered = teams.filter(t => key.includes(t.key));
+    return teamsFiltered;
   }
 
   async getIssueById(issueId: string) {
@@ -93,7 +93,7 @@ export class LinearAPIClient {
     if (issueCount) {
       info(`Found ${issueCount} issues to move`);
       for (const issue of issues) {
-        info(`updating issue ${issue.id}`);
+        info(`updating issue ${issue.number}`);
         if (issueMutation.newState) {
           try {
             await this.moveIssueToNewState(issue, issueMutation.newState);

@@ -5,16 +5,22 @@ inputs:
   linear_token:
     required: true
     description: 'Linear API token'
-  team_name:
-    description: 'Case-sensitive team name in Linear'
+  allowed_team_identifiers:
+    required: true
+    description: 'List of team ids separated by commas and/or spaces. Will skip if team is not in this list'
+  team_identifier:
+    required: true
+    description: 'Team ID from Linear'
 
   # Issue filtering inputs (at least one required)
   status_from:
+    required: false
     description: 'Status name (case sensitive) to filter issues'
   issue_number:
+    required: false
     description: 'issue number to mutate'
 
-  # Issue mutation options (at least one required)
+  # Issue mutation options
   status_to:
     required: true
     description: 'New status name (case sensitive)'
