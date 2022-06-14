@@ -8,24 +8,14 @@ export async function moveIssues(
 ): Promise<number> {
   const client = new LinearAPIClient(p.linear_token);
 
-  if (
-    p.team_identifier &&
-    p.allowed_team_identifiers.indexOf(p.team_identifier) === -1
-  ) {
-    info(`Team ${p.team_identifier} is not allowed to move issues`);
-    return 0;
-  }
-
-  const teams = p.team_identifier
-    ? await client.getTeamByKey([p.team_identifier])
-    : await client.getTeamByKey(p.allowed_team_identifiers);
+  const teams = await client.getTeamByKey(p.team_identifier);
 
   if (p.team_identifier) {
-    assert(teams[0], `team with name ${p.team_identifier} not found`);
-  } else {
     assert(
-      teams.length !== p.allowed_team_identifiers.length,
-      'no teams found'
+      teams.length !== p.team_identifier.length,
+      `not all teams found. Found teams: ${teams
+        .map(t => t.key)
+        .join(', ')} but expected: ${p.team_identifier.join(', ')}`
     );
   }
 

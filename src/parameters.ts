@@ -9,8 +9,7 @@ type RequiredParameters = {
 const filterParameters = [
   'status_from',
   'issue_number',
-  'team_identifier',
-  'allowed_team_identifiers'
+  'team_identifier'
 ] as const;
 
 type IssueFilterParameters = {
@@ -51,10 +50,9 @@ function validateParameters(p: Parameters) {
     throw new Error('issue_number must be a number');
   }
 
-  const isAllowedTeamIdentifiersAnArray =
-    p.allowed_team_identifiers &&
-    p.allowed_team_identifiers.split(/ ,/g).length;
-  if (p.allowed_team_identifiers && !isAllowedTeamIdentifiersAnArray) {
+  const isAllowedTeamIdentifier =
+    p.team_identifier && p.team_identifier.split(/ ,/g).length;
+  if (p.team_identifier && !isAllowedTeamIdentifier) {
     throw new Error(
       'allowed_team_identifiers must be a comma separated list of team identifiers'
     );
@@ -78,12 +76,10 @@ export function getActionParameters() {
   return {
     ...result,
     /* eslint-disable-next-line camelcase */
-    allowed_team_identifiers: result.allowed_team_identifiers
+    team_identifier: result.team_identifier
       .split(/ ,/g)
-      .map(x => x.toLocaleUpperCase()),
-    // eslint-disable-next-line camelcase
-    team_identifier: result.team_identifier.toLocaleUpperCase()
-  } as Omit<Parameters, 'allowed_team_identifiers'> & {
-    allowed_team_identifiers: string[];
+      .map(x => x.toLocaleUpperCase())
+  } as Omit<Parameters, 'team_identifier'> & {
+    team_identifier: string[];
   };
 }

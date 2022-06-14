@@ -5,9 +5,6 @@ inputs:
   linear_token:
     required: true
     description: 'Linear API token'
-  allowed_team_identifiers:
-    required: true
-    description: 'List of team ids separated by commas and/or spaces. Will skip if team is not in this list'
   team_identifier:
     required: true
     description: 'Team ID from Linear'
