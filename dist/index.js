@@ -198,7 +198,7 @@ function moveIssues(p) {
         const client = new linear_1.LinearAPIClient(p.linear_token);
         const teams = yield client.getTeamByKey(p.team_identifier);
         if (p.team_identifier) {
-            (0, assert_1.default)(teams.length !== p.team_identifier.length, `not all teams found. Found teams: ${teams
+            (0, assert_1.default)(teams.length === p.team_identifier.length, `not all teams found. Found teams: ${teams
                 .map(t => t.key)
                 .join(', ')} but expected: ${p.team_identifier.join(', ')}`);
         }

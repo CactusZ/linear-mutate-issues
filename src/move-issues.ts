@@ -12,7 +12,7 @@ export async function moveIssues(
 
   if (p.team_identifier) {
     assert(
-      teams.length !== p.team_identifier.length,
+      teams.length === p.team_identifier.length,
       `not all teams found. Found teams: ${teams
         .map(t => t.key)
         .join(', ')} but expected: ${p.team_identifier.join(', ')}`
