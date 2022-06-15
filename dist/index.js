@@ -197,10 +197,16 @@ function moveIssues(p) {
     return __awaiter(this, void 0, void 0, function* () {
         const client = new linear_1.LinearAPIClient(p.linear_token);
         const teams = yield client.getTeamByKey(p.team_identifier);
-        if (p.team_identifier) {
+        if (p.team_identifier && p.team_identifier.length > 1) {
             (0, assert_1.default)(teams.length === p.team_identifier.length, `not all teams found. Found teams: ${teams
                 .map(t => t.key)
                 .join(', ')} but expected: ${p.team_identifier.join(', ')}`);
+        }
+        else if (p.team_identifier &&
+            p.team_identifier.length === 1 &&
+            !teams.length) {
+            (0, core_1.info)(`Team ${p.team_identifier} not found`);
+            return 0;
         }
         (0, core_1.info)('Retrieving Statuses from API');
         let issuesMovedTotal = 0;
