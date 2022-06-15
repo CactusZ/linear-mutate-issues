@@ -10,13 +10,20 @@ export async function moveIssues(
 
   const teams = await client.getTeamByKey(p.team_identifier);
 
-  if (p.team_identifier) {
+  if (p.team_identifier && p.team_identifier.length > 1) {
     assert(
       teams.length === p.team_identifier.length,
       `not all teams found. Found teams: ${teams
         .map(t => t.key)
         .join(', ')} but expected: ${p.team_identifier.join(', ')}`
     );
+  } else if (
+    p.team_identifier &&
+    p.team_identifier.length === 1 &&
+    !teams.length
+  ) {
+    info(`Team ${p.team_identifier} not found`);
+    return 0;
   }
 
   info('Retrieving Statuses from API');
