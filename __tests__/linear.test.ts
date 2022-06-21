@@ -1,4 +1,4 @@
-import { Issue, WorkflowState } from '@linear/sdk';
+import { Issue, Team, WorkflowState } from '@linear/sdk';
 import { LinearAPIClient } from '../src/linear';
 
 const states = [
@@ -41,7 +41,11 @@ describe('LinearAPIClient class', () => {
   });
 
   it('getAllStates()', async () => {
-    const fetchedStates = await client.getAllStates({});
+    const fetchedStates = await client.getAllStates({
+      team: {
+        states: () => Promise.resolve({ nodes: states })
+      } as Team
+    });
     expect(fetchedStates).toEqual(states);
   });
 

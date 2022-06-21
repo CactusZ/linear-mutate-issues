@@ -30,19 +30,8 @@ class LinearAPIClient {
     }
     getAllStates({ team }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const allStates = (yield this.client.workflowStates()).nodes;
-            const teams = team
-                ? yield Promise.all(allStates.map(state => state.team))
-                : [];
-            return allStates.filter((state, index) => {
-                if (team) {
-                    const stateTeam = teams[index];
-                    return (stateTeam === null || stateTeam === void 0 ? void 0 : stateTeam.id) === team.id;
-                }
-                else {
-                    return true;
-                }
-            });
+            const allStates = (yield team.states()).nodes;
+            return allStates;
         });
     }
     getTeamByKey(key) {

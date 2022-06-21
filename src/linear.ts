@@ -21,21 +21,10 @@ export class LinearAPIClient {
     this.client = new LinearClient({ apiKey });
   }
 
-  async getAllStates({ team }: { team?: Team }) {
-    const allStates = (await this.client.workflowStates()).nodes;
+  async getAllStates({ team }: { team: Team }) {
+    const allStates = (await team.states()).nodes;
 
-    const teams = team
-      ? await Promise.all(allStates.map(state => state.team))
-      : [];
-
-    return allStates.filter((state, index) => {
-      if (team) {
-        const stateTeam = teams[index];
-        return stateTeam?.id === team.id;
-      } else {
-        return true;
-      }
-    });
+    return allStates;
   }
 
   async getTeamByKey(key: string[]) {
