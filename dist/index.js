@@ -82,10 +82,10 @@ class LinearAPIClient {
             if (issueCount) {
                 (0, core_1.info)(`Found ${issueCount} issues to move`);
                 for (const issue of issues) {
-                    (0, core_1.info)(`updating issue ${issue.number}`);
+                    (0, core_1.info)(`updating issue ${issue.identifier}`);
                     if (issueMutation.newState) {
                         try {
-                            yield this.moveIssueToNewState(issue, issueMutation.newState);
+                            yield this.moveIssueToNewState(issue, issueMutation.newState, !!issueMutation.includeChildren);
                         }
                         catch (e) {
                             (0, core_1.error)(e);
@@ -97,7 +97,7 @@ class LinearAPIClient {
                                 (0, core_1.error)(`Failed errors: ${e.errors}`);
                                 (0, core_1.error)(`Original: ${e.raw}`);
                             }
-                            throw new Error(`Error while moving issue ${issue.number}. Error=${e}`);
+                            throw new Error(`Error while moving issue ${issue.identifier}. Error=${e}`);
                         }
                     }
                     else {
@@ -111,8 +111,15 @@ class LinearAPIClient {
             return issueCount;
         });
     }
-    moveIssueToNewState(issue, state) {
+    moveIssueToNewState(issue, state, includeChildren) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (includeChildren) {
+                const subIssues = (yield issue.children()).nodes || [];
+                for (const subIssue of subIssues) {
+                    (0, core_1.info)(`Moving sub-issue ${subIssue.identifier} of issue ${issue.identifier}`);
+                    yield this.moveIssueToNewState(subIssue, state, includeChildren);
+                }
+            }
             return this.client.issueUpdate(issue.id, { stateId: state.id });
         });
     }
@@ -216,7 +223,8 @@ function moveIssues(p) {
                 issueId: Number(p.issue_number),
                 team
             }, {
-                newState
+                newState,
+                includeChildren: true
             });
             issuesMovedTotal += issuesMovedCount;
         }

@@ -65,6 +65,7 @@ export class LinearAPIClient {
     },
     issueMutation: {
       newState?: WorkflowState;
+      includeChildren?: boolean;
     }
   ) {
     const filter: IssueFilter = {};
@@ -82,10 +83,14 @@ export class LinearAPIClient {
     if (issueCount) {
       info(`Found ${issueCount} issues to move`);
       for (const issue of issues) {
-        info(`updating issue ${issue.number}`);
+        info(`updating issue ${issue.identifier}`);
         if (issueMutation.newState) {
           try {
-            await this.moveIssueToNewState(issue, issueMutation.newState);
+            await this.moveIssueToNewState(
+              issue,
+              issueMutation.newState,
+              !!issueMutation.includeChildren
+            );
           } catch (e) {
             error(e as Error);
             if (e instanceof LinearError) {
@@ -97,7 +102,7 @@ export class LinearAPIClient {
               error(`Original: ${e.raw}`);
             }
             throw new Error(
-              `Error while moving issue ${issue.number}. Error=${e}`
+              `Error while moving issue ${issue.identifier}. Error=${e}`
             );
           }
         } else {
@@ -111,7 +116,20 @@ export class LinearAPIClient {
     return issueCount;
   }
 
-  private async moveIssueToNewState(issue: Issue, state: WorkflowState) {
+  private async moveIssueToNewState(
+    issue: Issue,
+    state: WorkflowState,
+    includeChildren: boolean
+  ) {
+    if (includeChildren) {
+      const subIssues = (await issue.children()).nodes || [];
+      for (const subIssue of subIssues) {
+        info(
+          `Moving sub-issue ${subIssue.identifier} of issue ${issue.identifier}`
+        );
+        await this.moveIssueToNewState(subIssue, state, includeChildren);
+      }
+    }
     return this.client.issueUpdate(issue.id, { stateId: state.id });
   }
 }
