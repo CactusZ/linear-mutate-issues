@@ -55,7 +55,7 @@ export async function moveIssues(
       },
       {
         newState,
-        includeChildren: true
+        includeChildren: false
       }
     );
     issuesMovedTotal += issuesMovedCount;

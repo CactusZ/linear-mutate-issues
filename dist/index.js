@@ -224,7 +224,7 @@ function moveIssues(p) {
                 team
             }, {
                 newState,
-                includeChildren: true
+                includeChildren: false
             });
             issuesMovedTotal += issuesMovedCount;
         }
